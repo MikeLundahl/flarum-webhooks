@@ -67,7 +67,7 @@ class Adapter extends \FoF\Webhooks\Adapters\Adapter
             'fields'        => $response->getIncludeTags() ? [
                 [
                     'name'    => 'Tags',
-                    'value'   => implode(', ', $response->getTags()),
+                    'value'   => implode(', ', $response->discussionTags),
                 ],
             ] : null,
             'timestamp' => $response->timestamp,

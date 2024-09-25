@@ -80,10 +80,13 @@ class Webhook extends AbstractModel
         return Tag::whereIn('id', $this->tag_id)->get();
     }
 
+    //FIXME: This is not used anymore, remove it
+    /*
     public function appliedTags()
     {
         return Tag::select('name')->whereIn('id', $this->tag_id)->pluck('name')->toArray();
     }
+    */
 
     public function getIncludeTags(): bool
     {

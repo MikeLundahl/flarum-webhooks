@@ -13,8 +13,25 @@ namespace FoF\Webhooks;
 
 use Carbon\Carbon;
 use Flarum\Http\UrlGenerator;
+
+use Flarum\Post\Event\Posted;
+use Flarum\Post\Event\Deleted;
+use Flarum\Post\Event\Restored;
+use Flarum\Post\Event\Hidden;
+use Flarum\Post\Event\Revised;
+
+use Flarum\Discussion\Event\Started;
+use Flarum\Discussion\Event\Deleted as DiscussionDeleted;
+use Flarum\Discussion\Event\Hidden as DiscussionHidden;
+use Flarum\Discussion\Event\Renamed as DiscussionRenamed;
+use Flarum\Discussion\Event\Restored as DiscussionRestored;
+
+
+
 use Flarum\User\User;
+use FoF\Webhooks\Actions\Discussion\Renamed;
 use FoF\Webhooks\Models\Webhook;
+use FoF\Webhooks\Models\DiscussionTag;
 
 class Response
 {
@@ -64,6 +81,12 @@ class Response
      * @var Webhook
      */
     protected $webhook;
+
+    //TODO: If this is not used, remove it
+    /**
+     * @var DiscussionTag
+     */
+    protected $discussionTag;
 
     /**
      * Response constructor.
@@ -151,14 +174,44 @@ class Response
         return $this->webhook->include_tags;
     }
 
-    public function getTags(): ?array
+    public function setTagsByDiscussionId(int $discussionId): self
     {
-        return $this->webhook->appliedTags();
+        $this->discussionTags = DiscussionTag::getTagsNamesByDiscussionId($discussionId);
+
+        return $this;
     }
 
     public function withWebhook(Webhook $webhook): self
     {
         $this->setWebhook($webhook);
+
+        //TODO: check if "include tags" are enabled in the webhook settings
+
+        if (
+            $this->event instanceof Posted ||
+            $this->event instanceof Revised ||
+            $this->event instanceof Restored ||
+            $this->event instanceof Hidden ||
+            $this->event instanceof Deleted
+        ) {
+            $discussionId = $this->event->post->discussion->id;
+
+            //TODO: remove this debug line
+            resolve('log')->info("Discussion ID: $discussionId");
+            $this->setTagsByDiscussionId($discussionId);
+        }
+
+        if (
+            $this->event instanceof Started ||
+            $this->event instanceof DiscussionDeleted ||
+            $this->event instanceof DiscussionHidden ||
+            $this->event instanceof DiscussionRenamed ||
+            $this->event instanceof DiscussionRestored
+        ) {
+            $discussionId = $this->event->discussion->id;
+            resolve('log')->info("Discussion ID: $discussionId");
+            $this->setTagsByDiscussionId($discussionId);
+        }
 
         return $this;
     }
